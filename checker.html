@@ -524,70 +524,7 @@ function formatAIText(text) {
   return html;
 }
 
-const catData = {
-  kitchen: {
-    label:'キッチン',
-    prefix:'キッチンの',
-    chips:[
-      {label:'🚿 蛇口から水漏れ', text:'キッチンの蛇口からポタポタ水が漏れています'},
-      {label:'🪣 排水口が詰まった', text:'キッチンの排水口が詰まって流れが悪いです'},
-      {label:'💧 排水管から水漏れ', text:'キッチンのシンク下の配管から水が漏れています'},
-      {label:'🔧 蛇口を交換したい', text:'キッチンの蛇口を新しいものに交換したいです'},
-    ]
-  },
-  toilet: {
-    label:'トイレ',
-    prefix:'トイレの',
-    chips:[
-      {label:'🚽 詰まって流れない', text:'トイレが詰まって水が流れなくなりました'},
-      {label:'💦 水が止まらない', text:'トイレの水が流れ続けて止まりません'},
-      {label:'🔧 タンクから水漏れ', text:'トイレのタンクや便器の根元から水が漏れています'},
-      {label:'🚿 ウォシュレット故障', text:'トイレのウォシュレットが壊れました'},
-    ]
-  },
-  bath: {
-    label:'お風呂・洗面',
-    prefix:'お風呂・洗面の',
-    chips:[
-      {label:'🚿 シャワーから水漏れ', text:'シャワーヘッドや蛇口から水が漏れています'},
-      {label:'🪣 排水口が詰まった', text:'お風呂の排水口が詰まって流れが遅いです'},
-      {label:'💧 排水口から異臭', text:'お風呂の排水口から異臭がして流れも遅いです'},
-      {label:'🔥 給湯器が故障', text:'給湯器が故障してお湯が出なくなりました'},
-    ]
-  },
-  pipe: {
-    label:'配管・排水',
-    prefix:'配管・排水の',
-    chips:[
-      {label:'💧 床下から水漏れ音', text:'床下や壁の中で水漏れの音がしています'},
-      {label:'❄️ 凍結・破裂した', text:'配管が凍結して破裂してしまいました'},
-      {label:'🔩 排水管全体が詰まり', text:'家全体の排水の流れが悪くなっています'},
-      {label:'📉 水圧が急に弱くなった', text:'最近急に水の出が悪くなりました'},
-    ]
-  },
-  outdoor: {
-    label:'外構・屋外',
-    prefix:'外構・屋外の',
-    chips:[
-      {label:'🏗️ 散水栓から水漏れ', text:'庭の散水栓や水栓柱から水が漏れています'},
-      {label:'❄️ 屋外配管が凍結破裂', text:'朝起きたら外の水道管が凍結して破裂していました'},
-      {label:'🪣 桝・側溝が詰まった', text:'汚水桝や雨水桝が詰まってあふれています'},
-      {label:'💧 地中から水漏れ', text:'水道メーター付近の地中から水が漏れているようです'},
-    ]
-  }
-};
-
-// (旧selectCat削除済み)
-
-function showIntentArea() {
-  document.getElementById('chipArea').style.display = 'none';
-  document.getElementById('intentArea').style.display = 'flex';
-}
-
-function hideIntentArea() {
-  document.getElementById('intentArea').style.display = 'none';
-  document.getElementById('chipArea').style.display = 'block';
-}
+// 旧catData・旧関数群 削除済み
 
 function selectIntent(text) {
   // ボタンを非活性化（二重送信防止）
