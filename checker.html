@@ -99,6 +99,13 @@ textarea::placeholder{color:#bbb;}
 .input-note{font-size:11px;color:#bbb;margin-top:6px;text-align:center;}
 
 /* Modal */
+/* Intent buttons */
+.intent-btn{display:block;width:100%;padding:11px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;text-align:center;font-family:'Noto Sans JP',sans-serif;margin-top:4px;transition:background 0.15s;}
+.intent-btn:hover{background:var(--blue-dark);}
+.intent-btn:disabled{background:#ccc;cursor:not-allowed;}
+.intent-btn-outline{background:var(--white);color:var(--blue);border:2px solid var(--blue);}
+.intent-btn-outline:hover{background:var(--blue-light);}
+
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;}
 .modal-overlay.open{display:flex;}
 .modal{background:var(--white);border-radius:16px 16px 0 0;padding:24px 20px 32px;width:100%;max-width:560px;margin:0 auto;}
@@ -325,11 +332,27 @@ function formatAIText(text) {
     .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>')
     .replace(/\n/g,'<br>');
 
+  // 意図確認の質問が含まれる場合は選択ボタンを表示
+  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか')) {
+    html += `
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+        <button class="intent-btn" onclick="selectIntent('自分で修理したいです（DIY方法を教えてください）')">🔧 自分で直したい（DIY）</button>
+        <button class="intent-btn intent-btn-outline" onclick="selectIntent('業者に頼んだ場合の費用目安を知りたいです')">💰 業者費用の目安を知りたい</button>
+      </div>`;
+  }
+
   // 業者ルートの場合は業者ボタンを追加
-  if (text.includes('修理費用の目安') || text.includes('業者')) {
+  if (text.includes('修理費用の目安') || (text.includes('業者') && text.includes('■'))) {
     html += `<button class="vendor-btn" onclick="openModal()">🔍 無料で業者を探す</button>`;
   }
   return html;
+}
+
+function selectIntent(text) {
+  // ボタンを非活性化（二重送信防止）
+  document.querySelectorAll('.intent-btn').forEach(b => b.disabled = true);
+  document.getElementById('userInput').value = text;
+  sendMessage();
 }
 
 async function sendMessage() {
