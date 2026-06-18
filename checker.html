@@ -53,7 +53,11 @@ header{background:var(--white);border-bottom:1px solid var(--border);padding:12p
 .msg-bubble{max-width:calc(100% - 50px);padding:12px 14px;border-radius:12px;font-size:14px;line-height:1.75;}
 .msg-ai .msg-bubble{background:var(--white);border:1px solid var(--border);border-radius:4px 12px 12px 12px;}
 .msg-user .msg-bubble{background:var(--blue);color:#fff;border-radius:12px 4px 12px 12px;}
-.msg-bubble strong{font-weight:700;display:block;margin-bottom:4px;}
+.msg-bubble strong{font-weight:700;}
+.msg-bubble strong.md-head{display:block;margin:10px 0 4px;font-size:15px;color:var(--blue);}
+.msg-bubble .md-row{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.msg-bubble .md-row:first-child{font-weight:700;color:var(--text-sub);}
+.msg-bubble .md-cell{flex:1;}
 .msg-bubble .price{font-size:18px;font-weight:700;color:var(--blue);font-family:'Inter',sans-serif;margin:8px 0;}
 .msg-user .msg-bubble .price{color:#fff;}
 .msg-bubble .tip{background:var(--bg);border-radius:6px;padding:8px 10px;font-size:13px;color:var(--text-sub);margin-top:8px;border-left:3px solid var(--blue);}
@@ -97,6 +101,14 @@ textarea::placeholder{color:#bbb;}
 .send-btn:disabled{background:#ccc;cursor:not-allowed;}
 .send-btn svg{width:18px;height:18px;fill:#fff;}
 .input-note{font-size:11px;color:#bbb;margin-top:6px;text-align:center;}
+/* Camera button */
+.cam-btn{width:44px;height:44px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s;}
+.cam-btn:hover{background:var(--blue-light);}
+.cam-btn svg{width:20px;height:20px;fill:var(--blue);}
+/* Image preview */
+.image-preview{position:relative;display:inline-block;margin-bottom:8px;}
+.image-preview img{max-width:120px;max-height:120px;border-radius:8px;border:1px solid var(--border);display:block;}
+.remove-img{position:absolute;top:-8px;right:-8px;width:24px;height:24px;background:var(--text);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;}
 
 /* Bottom 3-step area */
 .bottom-label{font-size:11px;color:#999;text-align:center;margin-bottom:6px;letter-spacing:0.05em;}
@@ -198,13 +210,23 @@ textarea::placeholder{color:#bbb;}
 
 <!-- Input area -->
 <div class="input-area">
+  <!-- 画像プレビュー -->
+  <div id="imagePreview" class="image-preview" style="display:none;">
+    <img id="previewImg" src="" alt="プレビュー">
+    <button class="remove-img" onclick="removeImage()" aria-label="画像を削除">×</button>
+  </div>
   <div class="input-row">
-    <textarea id="userInput" placeholder="症状を入力してください（例：キッチンの蛇口からポタポタ水が漏れています）" rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+    <!-- カメラボタン -->
+    <label class="cam-btn" aria-label="写真を追加">
+      <input type="file" id="imageInput" accept="image/*" onchange="handleImageSelect(event)" style="display:none;">
+      <svg viewBox="0 0 24 24"><path d="M12 15.2a3.2 3.2 0 100-6.4 3.2 3.2 0 000 6.4zM9 2l-1.8 2H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2h-3.2L15 2H9zm3 15a5 5 0 110-10 5 5 0 010 10z"/></svg>
+    </label>
+    <textarea id="userInput" placeholder="症状を入力 or 写真を添付してください" rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
     <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="送信">
       <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
     </button>
   </div>
-  <div class="input-note">水道・配管・排水トラブル専用AIです</div>
+  <div class="input-note">水道・配管・排水トラブル専用AIです（📷写真診断対応）</div>
 </div>
 
 <!-- Vendor Modal -->
@@ -343,6 +365,20 @@ function addMessage(role, content) {
   return div;
 }
 
+function addUserMessage(text, imgSrc) {
+  const wrap = document.getElementById('chatWrap');
+  const div = document.createElement('div');
+  div.className = 'msg msg-user';
+  let inner = '';
+  if (imgSrc) {
+    inner += `<img src="${imgSrc}" style="max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:6px;">`;
+  }
+  inner += escHtml(text);
+  div.innerHTML = `<div class="msg-bubble">${inner}</div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
 function showTyping() {
   const wrap = document.getElementById('chatWrap');
   const div = document.createElement('div');
@@ -363,22 +399,37 @@ function escHtml(s) {
 }
 
 function formatAIText(text) {
-  let html = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/■\s(.+)/g,'<strong>■ $1</strong>')
+  // 1. HTMLエスケープ
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // 2. マークダウン整形
+  html = html
+    // 水平線 --- を除去
+    .replace(/^\s*---+\s*$/gm, '')
+    // 見出し ## ### を太字に
+    .replace(/^#{1,4}\s*(.+)$/gm, '<strong class="md-head">$1</strong>')
+    // 太字 **text**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // テーブル行 | a | b | c | を簡易整形
+    .replace(/^\|(.+)\|\s*$/gm, (m, row) => {
+      // 区切り線（|---|---|）は除去
+      if (/^[\s|:-]+$/.test(row)) return '';
+      const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
+      return '<div class="md-row">' + cells.map(c => `<span class="md-cell">${c}</span>`).join('') + '</div>';
+    });
+
+  // 3. 価格・星のハイライト
+  html = html
     .replace(/¥[\d,]+\s*〜\s*¥[\d,]+/g,'<span class="price">$&</span>')
     .replace(/★★★/g,'<span style="color:#e67700">★★★</span>')
     .replace(/★★☆/g,'<span style="color:#e67700">★★☆</span>')
-    .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>')
-    .replace(/\n/g,'<br>');
+    .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>');
 
-  // 意図確認の質問が含まれる場合は下部エリアを切り替え
-  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか') || text.includes('ご希望ですか') || text.includes('修理方法について')) {
-    setTimeout(() => showIntentArea(), 100);
-  }
+  // 4. 改行を<br>に（連続改行は1つに）
+  html = html.replace(/\n{2,}/g, '<br>').replace(/\n/g, '<br>');
 
   // 業者ルートの場合は業者ボタンを追加
-  if (text.includes('修理費用の目安') || (text.includes('業者') && text.includes('■'))) {
+  if (text.includes('修理費用の目安') || text.includes('業者選びのポイント')) {
     html += `<button class="vendor-btn" onclick="openModal()">🔍 無料で業者を探す</button>`;
   }
   return html;
@@ -512,22 +563,37 @@ function escHtml(s) {
 }
 
 function formatAIText(text) {
-  let html = text
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/■\s(.+)/g,'<strong>■ $1</strong>')
+  // 1. HTMLエスケープ
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // 2. マークダウン整形
+  html = html
+    // 水平線 --- を除去
+    .replace(/^\s*---+\s*$/gm, '')
+    // 見出し ## ### を太字に
+    .replace(/^#{1,4}\s*(.+)$/gm, '<strong class="md-head">$1</strong>')
+    // 太字 **text**
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // テーブル行 | a | b | c | を簡易整形
+    .replace(/^\|(.+)\|\s*$/gm, (m, row) => {
+      // 区切り線（|---|---|）は除去
+      if (/^[\s|:-]+$/.test(row)) return '';
+      const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
+      return '<div class="md-row">' + cells.map(c => `<span class="md-cell">${c}</span>`).join('') + '</div>';
+    });
+
+  // 3. 価格・星のハイライト
+  html = html
     .replace(/¥[\d,]+\s*〜\s*¥[\d,]+/g,'<span class="price">$&</span>')
     .replace(/★★★/g,'<span style="color:#e67700">★★★</span>')
     .replace(/★★☆/g,'<span style="color:#e67700">★★☆</span>')
-    .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>')
-    .replace(/\n/g,'<br>');
+    .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>');
 
-  // 意図確認の質問が含まれる場合は下部エリアを切り替え
-  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか') || text.includes('ご希望ですか') || text.includes('修理方法について')) {
-    setTimeout(() => showIntentArea(), 100);
-  }
+  // 4. 改行を<br>に（連続改行は1つに）
+  html = html.replace(/\n{2,}/g, '<br>').replace(/\n/g, '<br>');
 
   // 業者ルートの場合は業者ボタンを追加
-  if (text.includes('修理費用の目安') || (text.includes('業者') && text.includes('■'))) {
+  if (text.includes('修理費用の目安') || text.includes('業者選びのポイント')) {
     html += `<button class="vendor-btn" onclick="openModal()">🔍 無料で業者を探す</button>`;
   }
   return html;
@@ -535,26 +601,62 @@ function formatAIText(text) {
 
 // 旧catData・旧関数群 削除済み
 
-function selectIntent(text) {
-  // ボタンを非活性化（二重送信防止）
-  document.querySelectorAll('.intent-big-btn').forEach(b => b.disabled = true);
-  hideIntentArea();
-  document.getElementById('userInput').value = text;
-  sendMessage();
+// ── 画像アップロード処理 ──
+let selectedImage = null; // { media_type, data(base64) }
+
+function handleImageSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    alert('画像は5MB以下にしてください。');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const base64 = ev.target.result.split(',')[1];
+    selectedImage = { media_type: file.type, data: base64 };
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('imagePreview').style.display = 'inline-block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeImage() {
+  selectedImage = null;
+  document.getElementById('imageInput').value = '';
+  document.getElementById('imagePreview').style.display = 'none';
 }
 
 async function sendMessage() {
   const input = document.getElementById('userInput');
   const text = input.value.trim();
-  if (!text || isLoading) return;
+  // テキストも画像もなければ送らない
+  if ((!text && !selectedImage) || isLoading) return;
 
   isLoading = true;
   document.getElementById('sendBtn').disabled = true;
   input.value = '';
   input.style.height = 'auto';
 
-  addMessage('user', text);
-  messages.push({ role: 'user', content: text });
+  // ユーザーメッセージを構築（画像があればcontent配列に）
+  let userContent;
+  let displayText = text || '（写真を送信しました）';
+  if (selectedImage) {
+    userContent = [
+      { type: 'image', source: { type: 'base64', media_type: selectedImage.media_type, data: selectedImage.data } },
+      { type: 'text', text: text || 'この写真の水道トラブルを診断してください。' }
+    ];
+  } else {
+    userContent = text;
+  }
+
+  // 画面表示（画像プレビュー込み）
+  addUserMessage(displayText, selectedImage ? document.getElementById('previewImg').src : null);
+  messages.push({ role: 'user', content: userContent });
+
+  // プレビュークリア
+  const hadImage = !!selectedImage;
+  removeImage();
 
   showTyping();
 
@@ -585,7 +687,7 @@ async function sendMessage() {
       addMessage('assistant', aiText);
 
       // GA4イベント送信
-      gtag('event', 'ai_chat', { event_category: 'chat', event_label: text.slice(0,50) });
+      gtag('event', 'ai_chat', { event_category: 'chat', event_label: hadImage ? 'image' : text.slice(0,50) });
     }
   } catch(e) {
     removeTyping();
