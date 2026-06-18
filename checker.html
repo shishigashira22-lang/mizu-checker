@@ -302,9 +302,16 @@ let messages = [];
 let isLoading = false;
 
 function setExample(text) {
-  document.getElementById('userInput').value = text;
+  // 症状チップは目的＋症状を組み立てて即送信
+  const purposePrefix = selectedPurpose === 'diy'
+    ? '自分で直したいです。'
+    : selectedPurpose === 'vendor'
+    ? '業者費用の目安を知りたいです。'
+    : '';
+  const fullText = purposePrefix + text;
+  document.getElementById('userInput').value = fullText;
   autoResize(document.getElementById('userInput'));
-  document.getElementById('userInput').focus();
+  sendMessage();
 }
 
 function autoResize(el) {
@@ -462,8 +469,10 @@ function selectCat(e, cat) {
   // STEP3を表示
   document.getElementById('step3Area').style.display = 'block';
 
-  // 入力欄にプレフィックス＋目的をセット
-  const purposePrefix = selectedPurpose === 'diy' ? '自分で直したいです。' : '業者費用の目安を知りたいです。';
+  // 入力欄にプレフィックス＋目的をセット（症状チップ選択待ち）
+  const purposePrefix = selectedPurpose === 'diy'
+    ? '自分で直したいです。'
+    : '業者費用の目安を知りたいです。';
   const input = document.getElementById('userInput');
   input.value = purposePrefix + d.prefix;
   autoResize(input);
