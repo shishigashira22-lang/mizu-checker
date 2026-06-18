@@ -169,8 +169,8 @@ textarea::placeholder{color:#bbb;}
   <div id="step1Area">
     <div class="bottom-label">STEP 1　どちらをご希望ですか？</div>
     <div class="purpose-row">
-      <button class="purpose-btn diy" onclick="selectPurpose('diy')">🔧 自分で直したい</button>
-      <button class="purpose-btn vendor-sel" onclick="selectPurpose('vendor')">💰 業者費用を知りたい</button>
+      <button class="purpose-btn diy" onclick="selectPurpose(event,'diy')">🔧 自分で直したい</button>
+      <button class="purpose-btn vendor-sel" onclick="selectPurpose(event,'vendor')">💰 業者費用を知りたい</button>
     </div>
   </div>
 
@@ -178,11 +178,11 @@ textarea::placeholder{color:#bbb;}
   <div id="step2Area" style="display:none;">
     <div class="bottom-label">STEP 2　場所を選んでください</div>
     <div class="cat-chip-row">
-      <button class="cat-chip" onclick="selectCat('kitchen')">🍳 キッチン</button>
-      <button class="cat-chip" onclick="selectCat('toilet')">🚽 トイレ</button>
-      <button class="cat-chip" onclick="selectCat('bath')">🛁 お風呂・洗面</button>
-      <button class="cat-chip" onclick="selectCat('pipe')">🔩 配管・排水</button>
-      <button class="cat-chip" onclick="selectCat('outdoor')">🏗️ 外構・屋外</button>
+      <button class="cat-chip" onclick="selectCat(event,'kitchen')">🍳 キッチン</button>
+      <button class="cat-chip" onclick="selectCat(event,'toilet')">🚽 トイレ</button>
+      <button class="cat-chip" onclick="selectCat(event,'bath')">🛁 お風呂・洗面</button>
+      <button class="cat-chip" onclick="selectCat(event,'pipe')">🔩 配管・排水</button>
+      <button class="cat-chip" onclick="selectCat(event,'outdoor')">🏗️ 外構・屋外</button>
     </div>
   </div>
 
@@ -433,24 +433,24 @@ const catData = {
 };
 
 // STEP1: 目的選択
-function selectPurpose(purpose) {
+function selectPurpose(e, purpose) {
   selectedPurpose = purpose;
   // ボタンのスタイル更新
   document.querySelectorAll('.purpose-btn').forEach(b => {
     b.style.background = 'var(--white)';
     b.style.color = 'var(--blue)';
   });
-  event.target.style.background = 'var(--blue)';
-  event.target.style.color = '#fff';
+  e.target.style.background = 'var(--blue)';
+  e.target.style.color = '#fff';
   // STEP2を表示
   document.getElementById('step2Area').style.display = 'block';
   document.getElementById('step3Area').style.display = 'none';
 }
 
 // STEP2: カテゴリ選択
-function selectCat(cat) {
+function selectCat(e, cat) {
   document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  e.target.classList.add('active');
 
   const d = catData[cat];
   // 症状チップを更新
