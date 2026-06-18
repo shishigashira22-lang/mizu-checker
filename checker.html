@@ -98,13 +98,21 @@ textarea::placeholder{color:#bbb;}
 .send-btn svg{width:18px;height:18px;fill:#fff;}
 .input-note{font-size:11px;color:#bbb;margin-top:6px;text-align:center;}
 
-/* Modal */
-/* Intent buttons */
-.intent-btn{display:block;width:100%;padding:11px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;text-align:center;font-family:'Noto Sans JP',sans-serif;margin-top:4px;transition:background 0.15s;}
-.intent-btn:hover{background:var(--blue-dark);}
-.intent-btn:disabled{background:#ccc;cursor:not-allowed;}
-.intent-btn-outline{background:var(--white);color:var(--blue);border:2px solid var(--blue);}
-.intent-btn-outline:hover{background:var(--blue-light);}
+/* Bottom 3-step area */
+.bottom-label{font-size:11px;color:#999;text-align:center;margin-bottom:6px;letter-spacing:0.05em;}
+/* STEP1: 目的ボタン */
+.purpose-row{display:flex;gap:10px;padding:12px 16px;}
+.purpose-btn{flex:1;padding:14px 8px;border:2px solid var(--blue);border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Noto Sans JP',sans-serif;transition:background 0.15s,color 0.15s;background:var(--white);color:var(--blue);}
+.purpose-btn:hover{background:var(--blue);color:#fff;}
+.purpose-btn.diy{background:var(--blue);color:#fff;}
+.purpose-btn.vendor-sel{background:var(--white);color:var(--blue);}
+/* STEP2: カテゴリチップ */
+.cat-chip-row{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 8px;}
+.cat-chip{background:var(--white);border:1.5px solid var(--border);border-radius:20px;padding:7px 13px;font-size:13px;font-weight:500;cursor:pointer;color:var(--text-sub);white-space:nowrap;transition:background 0.15s,color 0.15s,border-color 0.15s;font-family:'Noto Sans JP',sans-serif;}
+.cat-chip:hover{border-color:var(--blue);color:var(--blue);}
+.cat-chip.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+/* STEP3: 症状チップ */
+.example-wrap{padding:0 16px 8px;}
 
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;}
 .modal-overlay.open{display:flex;}
@@ -154,15 +162,38 @@ textarea::placeholder{color:#bbb;}
   </div>
 </div>
 
-<!-- Example chips -->
-<div class="example-wrap">
-  <div class="example-label">よくある症状（タップで入力）</div>
-  <div class="chip-row">
-    <div class="chip" onclick="setExample('キッチンの蛇口からポタポタ水が漏れています')">🚿 蛇口から水漏れ</div>
-    <div class="chip" onclick="setExample('トイレが詰まって水が流れなくなりました')">🚽 トイレが詰まった</div>
-    <div class="chip" onclick="setExample('朝起きたら外の水道管が凍結して破裂していました')">❄️ 凍結・破裂</div>
-    <div class="chip" onclick="setExample('お風呂の排水口から異臭がして流れも遅いです')">💧 排水が臭い・遅い</div>
+<!-- Bottom 3-step area -->
+<div id="bottomAction">
+
+  <!-- STEP1: 目的選択 -->
+  <div id="step1Area">
+    <div class="bottom-label">STEP 1　どちらをご希望ですか？</div>
+    <div class="purpose-row">
+      <button class="purpose-btn diy" onclick="selectPurpose('diy')">🔧 自分で直したい</button>
+      <button class="purpose-btn vendor-sel" onclick="selectPurpose('vendor')">💰 業者費用を知りたい</button>
+    </div>
   </div>
+
+  <!-- STEP2: カテゴリ選択（目的選択後に表示） -->
+  <div id="step2Area" style="display:none;">
+    <div class="bottom-label">STEP 2　場所を選んでください</div>
+    <div class="cat-chip-row">
+      <button class="cat-chip" onclick="selectCat('kitchen')">🍳 キッチン</button>
+      <button class="cat-chip" onclick="selectCat('toilet')">🚽 トイレ</button>
+      <button class="cat-chip" onclick="selectCat('bath')">🛁 お風呂・洗面</button>
+      <button class="cat-chip" onclick="selectCat('pipe')">🔩 配管・排水</button>
+      <button class="cat-chip" onclick="selectCat('outdoor')">🏗️ 外構・屋外</button>
+    </div>
+  </div>
+
+  <!-- STEP3: 症状チップ（カテゴリ選択後に表示） -->
+  <div id="step3Area" style="display:none;">
+    <div class="example-wrap">
+      <div class="bottom-label">STEP 3　症状を選ぶか直接入力してください</div>
+      <div class="chip-row" id="symptomChips"></div>
+    </div>
+  </div>
+
 </div>
 
 <!-- Input area -->
@@ -334,13 +365,9 @@ function formatAIText(text) {
     .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>')
     .replace(/\n/g,'<br>');
 
-  // 意図確認の質問が含まれる場合は選択ボタンを表示
-  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか')) {
-    html += `
-      <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-        <button class="intent-btn" onclick="selectIntent('自分で修理したいです（DIY方法を教えてください）')">🔧 自分で直したい（DIY）</button>
-        <button class="intent-btn intent-btn-outline" onclick="selectIntent('業者に頼んだ場合の費用目安を知りたいです')">💰 業者費用の目安を知りたい</button>
-      </div>`;
+  // 意図確認の質問が含まれる場合は下部エリアを切り替え
+  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか') || text.includes('ご希望ですか') || text.includes('修理方法について')) {
+    setTimeout(() => showIntentArea(), 100);
   }
 
   // 業者ルートの場合は業者ボタンを追加
@@ -350,9 +377,222 @@ function formatAIText(text) {
   return html;
 }
 
+let selectedPurpose = null;
+
+const catData = {
+  kitchen: {
+    label:'キッチン',
+    prefix:'キッチンの',
+    chips:[
+      {label:'🚿 蛇口から水漏れ', text:'キッチンの蛇口からポタポタ水が漏れています'},
+      {label:'🪣 排水口が詰まった', text:'キッチンの排水口が詰まって流れが悪いです'},
+      {label:'💧 配管から水漏れ', text:'キッチンのシンク下の配管から水が漏れています'},
+      {label:'🔧 蛇口を交換したい', text:'キッチンの蛇口を新しいものに交換したいです'},
+    ]
+  },
+  toilet: {
+    label:'トイレ',
+    prefix:'トイレの',
+    chips:[
+      {label:'🚽 詰まって流れない', text:'トイレが詰まって水が流れなくなりました'},
+      {label:'💦 水が止まらない', text:'トイレの水が流れ続けて止まりません'},
+      {label:'💧 タンクから水漏れ', text:'トイレのタンクや便器の根元から水が漏れています'},
+      {label:'🚿 ウォシュレット故障', text:'トイレのウォシュレットが壊れました'},
+    ]
+  },
+  bath: {
+    label:'お風呂・洗面',
+    prefix:'お風呂・洗面の',
+    chips:[
+      {label:'🚿 シャワーから水漏れ', text:'シャワーヘッドや蛇口から水が漏れています'},
+      {label:'🪣 排水口が詰まった', text:'お風呂の排水口が詰まって流れが遅いです'},
+      {label:'💧 排水口から異臭', text:'お風呂の排水口から異臭がして流れも遅いです'},
+      {label:'🔥 給湯器が故障', text:'給湯器が故障してお湯が出なくなりました'},
+    ]
+  },
+  pipe: {
+    label:'配管・排水',
+    prefix:'配管・排水の',
+    chips:[
+      {label:'💧 床下から水漏れ音', text:'床下や壁の中で水漏れの音がしています'},
+      {label:'❄️ 凍結・破裂した', text:'配管が凍結して破裂してしまいました'},
+      {label:'🔩 排水管全体が詰まり', text:'家全体の排水の流れが悪くなっています'},
+      {label:'📉 水圧が弱くなった', text:'最近急に水の出が悪くなりました'},
+    ]
+  },
+  outdoor: {
+    label:'外構・屋外',
+    prefix:'外構・屋外の',
+    chips:[
+      {label:'🏗️ 散水栓から水漏れ', text:'庭の散水栓や水栓柱から水が漏れています'},
+      {label:'❄️ 屋外配管が凍結破裂', text:'朝起きたら外の水道管が凍結して破裂していました'},
+      {label:'🪣 桝・側溝が詰まった', text:'汚水桝や雨水桝が詰まってあふれています'},
+      {label:'💧 地中から水漏れ', text:'水道メーター付近の地中から水が漏れているようです'},
+    ]
+  }
+};
+
+// STEP1: 目的選択
+function selectPurpose(purpose) {
+  selectedPurpose = purpose;
+  // ボタンのスタイル更新
+  document.querySelectorAll('.purpose-btn').forEach(b => {
+    b.style.background = 'var(--white)';
+    b.style.color = 'var(--blue)';
+  });
+  event.target.style.background = 'var(--blue)';
+  event.target.style.color = '#fff';
+  // STEP2を表示
+  document.getElementById('step2Area').style.display = 'block';
+  document.getElementById('step3Area').style.display = 'none';
+}
+
+// STEP2: カテゴリ選択
+function selectCat(cat) {
+  document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const d = catData[cat];
+  // 症状チップを更新
+  const chips = document.getElementById('symptomChips');
+  chips.innerHTML = d.chips.map(c =>
+    `<div class="chip" onclick="setExample('${c.text}')">${c.label}</div>`
+  ).join('');
+
+  // STEP3を表示
+  document.getElementById('step3Area').style.display = 'block';
+
+  // 入力欄にプレフィックス＋目的をセット
+  const purposePrefix = selectedPurpose === 'diy' ? '自分で直したいです。' : '業者費用の目安を知りたいです。';
+  const input = document.getElementById('userInput');
+  input.value = purposePrefix + d.prefix;
+  autoResize(input);
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+}
+
+// AIが意図確認した場合（念のため残す）
+function showIntentArea() {
+  // 3ステップ方式では基本使わないが、AIが聞いてきた場合の保険
+}
+
+function hideIntentArea() {}
+
+function selectIntent(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function showTyping() {
+  const wrap = document.getElementById('chatWrap');
+  const div = document.createElement('div');
+  div.className = 'msg msg-ai';
+  div.id = 'typingIndicator';
+  div.innerHTML = `<div class="msg-avatar">💧</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+function formatAIText(text) {
+  let html = text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/■\s(.+)/g,'<strong>■ $1</strong>')
+    .replace(/¥[\d,]+\s*〜\s*¥[\d,]+/g,'<span class="price">$&</span>')
+    .replace(/★★★/g,'<span style="color:#e67700">★★★</span>')
+    .replace(/★★☆/g,'<span style="color:#e67700">★★☆</span>')
+    .replace(/★☆☆/g,'<span style="color:#2f9e44">★☆☆</span>')
+    .replace(/\n/g,'<br>');
+
+  // 意図確認の質問が含まれる場合は下部エリアを切り替え
+  if (text.includes('自分で修理したいですか') || text.includes('費用目安を知りたいですか') || text.includes('ご希望ですか') || text.includes('修理方法について')) {
+    setTimeout(() => showIntentArea(), 100);
+  }
+
+  // 業者ルートの場合は業者ボタンを追加
+  if (text.includes('修理費用の目安') || (text.includes('業者') && text.includes('■'))) {
+    html += `<button class="vendor-btn" onclick="openModal()">🔍 無料で業者を探す</button>`;
+  }
+  return html;
+}
+
+const catData = {
+  kitchen: {
+    label:'キッチン',
+    prefix:'キッチンの',
+    chips:[
+      {label:'🚿 蛇口から水漏れ', text:'キッチンの蛇口からポタポタ水が漏れています'},
+      {label:'🪣 排水口が詰まった', text:'キッチンの排水口が詰まって流れが悪いです'},
+      {label:'💧 排水管から水漏れ', text:'キッチンのシンク下の配管から水が漏れています'},
+      {label:'🔧 蛇口を交換したい', text:'キッチンの蛇口を新しいものに交換したいです'},
+    ]
+  },
+  toilet: {
+    label:'トイレ',
+    prefix:'トイレの',
+    chips:[
+      {label:'🚽 詰まって流れない', text:'トイレが詰まって水が流れなくなりました'},
+      {label:'💦 水が止まらない', text:'トイレの水が流れ続けて止まりません'},
+      {label:'🔧 タンクから水漏れ', text:'トイレのタンクや便器の根元から水が漏れています'},
+      {label:'🚿 ウォシュレット故障', text:'トイレのウォシュレットが壊れました'},
+    ]
+  },
+  bath: {
+    label:'お風呂・洗面',
+    prefix:'お風呂・洗面の',
+    chips:[
+      {label:'🚿 シャワーから水漏れ', text:'シャワーヘッドや蛇口から水が漏れています'},
+      {label:'🪣 排水口が詰まった', text:'お風呂の排水口が詰まって流れが遅いです'},
+      {label:'💧 排水口から異臭', text:'お風呂の排水口から異臭がして流れも遅いです'},
+      {label:'🔥 給湯器が故障', text:'給湯器が故障してお湯が出なくなりました'},
+    ]
+  },
+  pipe: {
+    label:'配管・排水',
+    prefix:'配管・排水の',
+    chips:[
+      {label:'💧 床下から水漏れ音', text:'床下や壁の中で水漏れの音がしています'},
+      {label:'❄️ 凍結・破裂した', text:'配管が凍結して破裂してしまいました'},
+      {label:'🔩 排水管全体が詰まり', text:'家全体の排水の流れが悪くなっています'},
+      {label:'📉 水圧が急に弱くなった', text:'最近急に水の出が悪くなりました'},
+    ]
+  },
+  outdoor: {
+    label:'外構・屋外',
+    prefix:'外構・屋外の',
+    chips:[
+      {label:'🏗️ 散水栓から水漏れ', text:'庭の散水栓や水栓柱から水が漏れています'},
+      {label:'❄️ 屋外配管が凍結破裂', text:'朝起きたら外の水道管が凍結して破裂していました'},
+      {label:'🪣 桝・側溝が詰まった', text:'汚水桝や雨水桝が詰まってあふれています'},
+      {label:'💧 地中から水漏れ', text:'水道メーター付近の地中から水が漏れているようです'},
+    ]
+  }
+};
+
+// (旧selectCat削除済み)
+
+function showIntentArea() {
+  document.getElementById('chipArea').style.display = 'none';
+  document.getElementById('intentArea').style.display = 'flex';
+}
+
+function hideIntentArea() {
+  document.getElementById('intentArea').style.display = 'none';
+  document.getElementById('chipArea').style.display = 'block';
+}
+
 function selectIntent(text) {
   // ボタンを非活性化（二重送信防止）
-  document.querySelectorAll('.intent-btn').forEach(b => b.disabled = true);
+  document.querySelectorAll('.intent-big-btn').forEach(b => b.disabled = true);
+  hideIntentArea();
   document.getElementById('userInput').value = text;
   sendMessage();
 }
