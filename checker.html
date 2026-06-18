@@ -568,6 +568,15 @@ async function sendMessage() {
     const data = await res.json();
     removeTyping();
 
+    // 使いすぎ制限（429）→ 業者モーダルを表示
+    if (res.status === 429 && data.show_modal) {
+      addMessage('assistant', `⚠️ ${data.message}<br>よろしければ無料で業者をご紹介しますわ。`);
+      setTimeout(() => openModal(), 800);
+      isLoading = false;
+      document.getElementById('sendBtn').disabled = false;
+      return;
+    }
+
     if (data.error) {
       addMessage('assistant', 'エラーが発生しました。しばらくしてから再度お試しください。');
     } else {
