@@ -101,6 +101,11 @@ textarea::placeholder{color:#bbb;}
 .send-btn:disabled{background:#ccc;cursor:not-allowed;}
 .send-btn svg{width:18px;height:18px;fill:#fff;}
 .input-note{font-size:11px;color:#bbb;margin-top:6px;text-align:center;}
+/* Reset bar */
+.reset-bar{padding:10px 16px;display:flex;justify-content:center;background:var(--white);border-top:1px solid var(--border);}
+.reset-steps-btn{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:8px 20px;font-size:13px;font-weight:500;cursor:pointer;color:var(--blue);font-family:'Noto Sans JP',sans-serif;transition:background 0.15s;}
+.reset-steps-btn:hover{background:var(--blue-light);}
+
 /* Camera button */
 .cam-btn{width:44px;height:44px;background:var(--bg);border:1px solid var(--border);border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.15s;}
 .cam-btn:hover{background:var(--blue-light);}
@@ -206,6 +211,11 @@ textarea::placeholder{color:#bbb;}
     </div>
   </div>
 
+</div>
+
+<!-- 最初に戻るバー（送信後に表示） -->
+<div id="resetBar" class="reset-bar" style="display:none;">
+  <button class="reset-steps-btn" onclick="resetSteps()">↻ 別の症状を相談する</button>
 </div>
 
 <!-- Input area -->
@@ -361,8 +371,15 @@ function addMessage(role, content) {
       <div class="msg-bubble">${formatAIText(content)}</div>`;
   }
   wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
+  scrollToBottom();
   return div;
+}
+
+function scrollToBottom() {
+  const wrap = document.getElementById('chatWrap');
+  // 遅延を入れて描画後に確実にスクロール
+  setTimeout(() => { wrap.scrollTop = wrap.scrollHeight; }, 50);
+  setTimeout(() => { wrap.scrollTop = wrap.scrollHeight; }, 200);
 }
 
 function addUserMessage(text, imgSrc) {
@@ -376,7 +393,7 @@ function addUserMessage(text, imgSrc) {
   inner += escHtml(text);
   div.innerHTML = `<div class="msg-bubble">${inner}</div>`;
   wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
+  scrollToBottom();
 }
 
 function showTyping() {
@@ -386,7 +403,7 @@ function showTyping() {
   div.id = 'typingIndicator';
   div.innerHTML = `<div class="msg-avatar">💧</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
   wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
+  scrollToBottom();
 }
 
 function removeTyping() {
@@ -550,7 +567,7 @@ function showTyping() {
   div.id = 'typingIndicator';
   div.innerHTML = `<div class="msg-avatar">💧</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
   wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
+  scrollToBottom();
 }
 
 function removeTyping() {
@@ -627,6 +644,27 @@ function removeImage() {
   document.getElementById('imagePreview').style.display = 'none';
 }
 
+// 3ステップUIを畳む（送信後）
+function collapseSteps() {
+  document.getElementById('bottomAction').style.display = 'none';
+  document.getElementById('resetBar').style.display = 'flex';
+}
+
+// 最初に戻る（3ステップUIを再表示）
+function resetSteps() {
+  document.getElementById('bottomAction').style.display = 'block';
+  document.getElementById('resetBar').style.display = 'none';
+  document.getElementById('step2Area').style.display = 'none';
+  document.getElementById('step3Area').style.display = 'none';
+  selectedPurpose = null;
+  document.querySelectorAll('.purpose-btn').forEach(b => {
+    b.style.background = 'var(--white)';
+    b.style.color = 'var(--blue)';
+  });
+  document.querySelectorAll('.cat-chip').forEach(b => b.classList.remove('active'));
+  document.getElementById('userInput').value = '';
+}
+
 async function sendMessage() {
   const input = document.getElementById('userInput');
   const text = input.value.trim();
@@ -637,6 +675,9 @@ async function sendMessage() {
   document.getElementById('sendBtn').disabled = true;
   input.value = '';
   input.style.height = 'auto';
+
+  // 3ステップUIを畳んで「最初に戻る」ボタンを表示
+  collapseSteps();
 
   // ユーザーメッセージを構築（画像があればcontent配列に）
   let userContent;
