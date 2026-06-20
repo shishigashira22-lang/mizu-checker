@@ -1,17 +1,51 @@
 {
   "rewrites": [
-    { "source": "/api/chat", "destination": "/api/chat.js" }
+    {
+      "source": "/api/chat",
+      "destination": "/api/chat.js"
+    }
   ],
   "redirects": [
-    { "source": "/privacy", "destination": "/privacy.html", "permanent": false }
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html",
+      "permanent": false
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "POST, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    },
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        }
       ]
     }
   ]
