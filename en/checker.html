@@ -479,10 +479,8 @@ function formatAIText(text) {
   // 4. 改行を<br>に（連続改行は1つに）
   html = html.replace(/\n{2,}/g, '<br>').replace(/\n/g, '<br>');
 
-  // 業者ルートの場合は業者ボタンを追加
-  if (text.includes('修理費用の目安') || text.includes('業者選びのポイント')) {
-    html += `<button class="vendor-btn" onclick="openModal()">🔍 Find a Professional (Free)</button>`;
-  }
+  // Always show vendor button
+  html += `<button class="vendor-btn" onclick="openModal()">🔍 Find a Professional (Free)</button>`;
   return html;
 }
 
@@ -643,10 +641,8 @@ function formatAIText(text) {
   // 4. 改行を<br>に（連続改行は1つに）
   html = html.replace(/\n{2,}/g, '<br>').replace(/\n/g, '<br>');
 
-  // 業者ルートの場合は業者ボタンを追加
-  if (text.includes('修理費用の目安') || text.includes('業者選びのポイント')) {
-    html += `<button class="vendor-btn" onclick="openModal()">🔍 Find a Professional (Free)</button>`;
-  }
+  // Always show vendor button
+  html += `<button class="vendor-btn" onclick="openModal()">🔍 Find a Professional (Free)</button>`;
   return html;
 }
 
